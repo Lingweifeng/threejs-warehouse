@@ -1,0 +1,14 @@
+//  弹窗部分样式
+.dialog-full {
+    .el-dialog__body {
+        height: calc(100% - 94px);
+        margin: 16px 0;
+        border-bottom: none;
+    }
+    &.margin-none {
+        .el-dialog__body {
+            margin: 0;
+            padding: 0;
+        }
+    }
+}
