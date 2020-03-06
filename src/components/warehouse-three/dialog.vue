@@ -52,33 +52,36 @@ export default {
             zoneList: [
                 {
                     name: '存储区1',
-                    width: 2, // 长
-                    depth: 10, // 宽
+                    width: 10, // 长
+                    depth: 4, // 宽
                     // 三维位置信息
                     position: {
-                        x: 0,
+                        x: -14,
                         y: 0.1,
-                        z: -7
+                        z: -8
                     },
                     // 存储区上的货架参数
                     shelves: {
                         name: '货架1',
-                        rowNum: 2, // 层数
+                        rowNum: 3, // 层数
                         columnNum: 3, // 列数
-                        width: 1.8, // 每格宽
+                        width: 2.8, // 每格宽
                         height: 1, // 每格高
-                        depth: 2.8, // 每格深
+                        depth: 1.8, // 每格深
+                        x: -13,
+                        y: 0.1,
+                        z: -3
                     }
                 },
                 {
                     name: '存储区2',
-                    width: 2, // 长
-                    depth: 10, // 宽
+                    width: 10, // 长
+                    depth: 4, // 宽
                     // 三维位置信息
                     position: {
                         x: 6,
                         y: 0.1,
-                        z: -7
+                        z: -8
                     },
                     // 存储区上的货架参数
                     shelves: {
@@ -88,6 +91,9 @@ export default {
                         width: 1.8, // 每格宽
                         height: 1, // 每格高
                         depth: 1.8, // 每格深
+                        x: 6,
+                        y: 0.1,
+                        z: -4
                     }
                 },
                 // 多级存储区
@@ -139,37 +145,11 @@ export default {
                 },
                 {
                     name: '存储区4',
-                    width: 2, // 长
-                    depth: 12, // 宽
+                    width: 12, // 长
+                    depth: 10, // 宽
                     // 三维位置信息
                     position: {
-                        x: -4,
-                        y: 0.1,
-                        z: 6
-                    },
-                    // 存储区上的货架参数
-                    shelves: null
-                },
-                {
-                    name: '存储区5',
-                    width: 5, // 长
-                    depth: 12, // 宽
-                    // 三维位置信息
-                    position: {
-                        x: 2,
-                        y: 0.1,
-                        z: 6
-                    },
-                    // 存储区上的货架参数
-                    shelves: null
-                },
-                {
-                    name: '存储区6',
-                    width: 2, // 长
-                    depth: 12, // 宽
-                    // 三维位置信息
-                    position: {
-                        x: 10,
+                        x: 6,
                         y: 0.1,
                         z: 6
                     },
@@ -181,6 +161,9 @@ export default {
                         width: 1.8, // 每格宽
                         height: 1, // 每格高
                         depth: 1.8, // 每格深
+                        x: 10,
+                        y: 0.1,
+                        z: 6
                     }
                 },
             ],
@@ -231,8 +214,8 @@ export default {
             let rightWall = createWall(this.wareHouse.depth, this.wareHouse.height, this.depth, { x: this.wareHouse.width/2, y: this.wareHouse.height/2 }, { y: Math.PI / 2 });
             this.scene.add(rightWall);
         },
-        // 加载文字
-        initTxt() {
+        // 存储区
+        initZone() {
             let self = this;
             let loader = new THREE.FontLoader();
             loader.load( '/threejs/fonts/SimHei_Regular.json', function ( font ) {
@@ -249,80 +232,73 @@ export default {
                 } );
 
                 // 递归生成文字
-                function creatZoneText(zone) {
+                function creatZoneText(zone, group) {
                     let zonePos = zone.position;
-                    let txtPos = { x: zonePos.x - zone.width/2, y: zonePos.y + 0.01, z: zonePos.z + zone.depth/2 - 0.05 };
-                    
                     let shapes = font.generateShapes( zone.name, 0.2 );
                     let geometry = new THREE.ShapeBufferGeometry( shapes );
-
+                    // 左面文字
+                    let txtPos = { x: zonePos.x - zone.width/2 + 0.05, y: zonePos.y + 0.01, z: zonePos.z - zone.depth/2 };
+                    let text = new THREE.Mesh( geometry, matLite );
+                    text.position.set(txtPos.x, txtPos.y, txtPos.z);
+                    text.rotation.x = -Math.PI / 2;
+                    text.rotation.z = -Math.PI / 2;
+                    if(group) group.add( text );
+                    // 右面文字
+                    txtPos = { x: zonePos.x + zone.width/2 - 0.05, y: zonePos.y + 0.01, z: zonePos.z + zone.depth/2 };
                     text = new THREE.Mesh( geometry, matLite );
                     text.position.set(txtPos.x, txtPos.y, txtPos.z);
                     text.rotation.x = -Math.PI / 2;
-                    self.scene.add( text );
+                    text.rotation.z = Math.PI / 2;
+                    if(group) group.add( text );
                     // 遍历子级，分别创建子级存储区
                     if(zone.children && zone.children[0]) {
                         zone.children.forEach(child => {
-                            creatZoneText(child);
+                            creatZoneText(child, group);
                         });
                     };
                 };
-
+                // 遍历存储区每个添加
                 self.zoneList.forEach(zone => {
+                    self.$set(zone, 'height', 0.01);
+                    let zoneGroup = createZone(zone);
                     // 添加存储区文字标识
-                    creatZoneText(zone);
-                    let zonePos = zone.position;
-                    let txtPos = { x: zonePos.x - zone.width/2, y: zonePos.y + 0.01, z: zonePos.z + zone.depth/2 - 0.05 };
-                    
-                    let shapes = font.generateShapes( zone.name, 0.2 );
-                    let geometry = new THREE.ShapeBufferGeometry( shapes );
-
-                    text = new THREE.Mesh( geometry, matLite );
-                    text.position.set(txtPos.x, txtPos.y, txtPos.z);
-                    text.rotation.x = -Math.PI / 2;
-                    self.scene.add( text );
+                    creatZoneText(zone, zoneGroup);
+                    self.scene.add(zoneGroup);
+                    self.objects.push(zoneGroup);
                     // 如果有货架恻添加存储区的货架
                     if(zone.shelves) {
-                        // console.log('scene', self.scene);
+                        self.$set(zone.shelves, 'x', zone.position.x);
+                        self.$set(zone.shelves, 'y', 0.1);
+                        self.$set(zone.shelves, 'z', zone.position.z);
+                        let shelvesGroup = createShelves(zone);
+                        console.log('shelvesGroup', shelvesGroup);
+                        // shelvesGroup.position.set(x, 0, z);
                         let zShelves = zone.shelves;
-                        let boardStartZ = zShelves.z - zone.depth/2 + zShelves.depth/2 + 0.1;
-                        let boardZ = boardStartZ + zShelves.depth*(zShelves.columnNum - 1);
-                        shapes = font.generateShapes( `${zone.name}\n${zone.shelves.name}`, 0.2 );
-                        geometry = new THREE.ShapeBufferGeometry( shapes );
+                        let boardStartX = zShelves.x - zone.width/2 + zShelves.width/2 + 0.1;
+                        let boardX = boardStartX + zShelves.width*(zShelves.columnNum - 1);
+                        let shapes = font.generateShapes( `${zone.name}\n${zone.shelves.name}`, 0.2 );
+                        let geometry = new THREE.ShapeBufferGeometry( shapes );
+                        // 左侧文字
+                        let text = new THREE.Mesh( geometry, matLite );
+                        text.position.set(boardStartX - zShelves.width/2 - 0.01, zShelves.height + 0.05, zShelves.z - 0.5);
+                        text.rotation.y = -Math.PI / 2;
+                        shelvesGroup.add( text );
+                        // 右侧文字
                         text = new THREE.Mesh( geometry, matLite );
-                        text.position.set(zShelves.x - 0.5, zShelves.height + 0.05, boardZ + zShelves.depth/2 + 0.01);
-                        self.scene.add( text );
+                        text.position.set(boardX + zShelves.width/2 + 0.01, zShelves.height + 0.05, zShelves.z + 0.5);
+                        text.rotation.y = Math.PI / 2;
+                        shelvesGroup.add( text );
+                        self.scene.add(shelvesGroup);
+                        self.objects.push(shelvesGroup);
                     };
                 });
-
-            });
-        },
-        // 存储区
-        initZone() {
-            // 遍历存储区每个添加
-            this.zoneList.forEach(zone => {
-                this.$set(zone, 'height', 0.01);
-                let zoneObj = createZone(zone);
-                this.scene.add(zoneObj);
-                this.objects.push(zoneObj);
-                // 如果有货架恻添加存储区的货架
-                if(zone.shelves) {
-                    this.$set(zone.shelves, 'x', zone.position.x);
-                    this.$set(zone.shelves, 'y', 0.1);
-                    this.$set(zone.shelves, 'z', zone.position.z);
-                    let shelvesMesh = createShelves(zone);
-                    console.log('shelvesMesh', shelvesMesh);
-                    // shelvesMesh.position.set(x, 0, z);
-                    this.scene.add(shelvesMesh);
-                    this.objects.push(shelvesMesh);
-                };
+                // 所有物体加载完成后再加载拖拽控件
+                self.initDragControls();
             });
         },
         // 初始化轨迹球控件
         initControls() {
             this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-            // this.controls.enableDamping = false;
-            // this.controls.dampingFactor = 0.001;
             // // 视角最小距离
             this.controls.minDistance = 0.001;
             // // 视角最远距离
@@ -337,26 +313,48 @@ export default {
             // 拖拽的时候需要禁用移动
             // self.controls.enabled = false;
             // 添加平移控件
-            // this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
-            // this.scene.add(this.transformControls);
+            this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+            this.transformControls.showY = false;
+            // 平移时要禁用掉鼠标旋转
+            this.transformControls.addEventListener( 'mouseDown', () => {
+                self.controls.enabled = false;
+            });
+            this.transformControls.addEventListener( 'mouseUp', () => {
+                self.controls.enabled = true;
+            });
+            this.scene.add(this.transformControls);
             console.log('objects', this.objects);
             this.dragControls = new DragControls( [ ...this.objects ], this.camera, this.renderer.domElement );
             console.log('this.dragControls', this.dragControls);
             this.dragControls.addEventListener( 'drag', this.render );
             // 鼠标略过事件
             this.dragControls.addEventListener('hoveron', event => {
-                console.log('hoveron event', event);
+                // console.log('hoveron event', event);
                 self.draggableObjects = self.dragControls.getObjects();
                 // console.log('draggableObjects', self.draggableObjects);
                 self.draggableObjects.length = 0;
                 // console.log('draggableObjects', self.draggableObjects);
                 let parent = event.object.parent;
+                // 存储区、货架都是整组平移
                 if(parent && parent.type === 'Group') {
+                    // hover效果
+                    parent.children.forEach(child => {
+                        console.log('child', child);
+                        child.material.emissive.set( 0x000000 );
+                    });
                     self.dragControls.transformGroup = true;
-                    self.draggableObjects.push(parent);
+                    // self.draggableObjects.push(parent);
+                    self.draggableObjects.length = 0;
+                    this.transformControls.attach(parent);
+                    let parentPos = parent.position;
+                    this.transformControls.position.set(parentPos.x, parentPos.y, parentPos.z);
                     // self.render();
-                } else {
+                } else { // 拖拽箱子(自由拖拽)
+                    // hover效果
+                    event.object.material.emissive.set( 0x000000 );
                     self.dragControls.transformGroup = false;
+                    self.draggableObjects.push(event.object);
+                    self.transformControls.detach();
                     // self.draggableObjects.push(event.object);
                 };
                 // debugger;
@@ -366,10 +364,11 @@ export default {
             });
             // 鼠标离开事件
             this.dragControls.addEventListener('hoveroff', function (event) {
-                console.log('hoveroff event', event);
+                // console.log('hoveroff event', event);
                 self.draggableObjects.length = 0;
                 self.dragControls.transformGroup = false;
                 self.draggableObjects.push(...self.objects);
+                // self.transformControls.detach();
                 // debugger;
                 // self.controls.enabled = true;
                 // 让变换控件对象和选中的对象绑定
@@ -430,9 +429,9 @@ export default {
             // 存储区
             this.initZone();
             // 文字
-            this.initTxt();
+            // this.initTxt();
             // 拖拽控件
-            this.initDragControls();
+            // this.initDragControls();
             // this.renderer.render( this.scene, this.camera );
             // 加载之前先删除子节点
             let childNodes = $whContainer.childNodes;
